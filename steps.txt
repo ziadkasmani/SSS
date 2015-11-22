@@ -1,0 +1,57 @@
+check signalr connectivity issues
+
+check insert add udate delete file stream (NCL)
+
+Qr code complete pending part
+
+fb dimension while uploading
+
+authentication using token JWT // imp
+
+GCM / SignalR broadcast receiver // imp
+
+WCF Security // imp
+
+load on demand C# + database
+
+multiple files faster way to retreive from file stream
+
+http://blogs.msdn.com/b/spike/archive/2011/02/28/inserting-a-file-into-a-filestream-table-from-c-and-how-to-get-it-back-as-well.aspx
+
+https://social.msdn.microsoft.com/Forums/sqlserver/en-US/6dce7411-9e37-4e6d-a02e-1dfd5cf58fda/cannnot-return-multiple-filestream-files-with-single-read-from-c?forum=transactsql
+
+class Program
+    {
+        static void Main(string[] args)
+        {
+            using (var cn = new SqlConnection("Data Source=(local);Integrated Security=SSPI;Initial Catalog=AgensyCredits"))
+            {
+                cn.Open();
+                using (var tx = cn.BeginTransaction())
+                {
+                    byte[] txToken;
+                    using (var cmd = new SqlCommand("SELECT GET_FILESTREAM_TRANSACTION_CONTEXT()", cn, tx))
+                    {
+                        txToken = (byte[])cmd.ExecuteScalar();
+                    }
+                    using (var cmd = new SqlCommand("SELECT TOP (10) F.[FileName], F.FileContent.PathName() AS PathName FROM dbo.TBL_Files F", cn, tx))
+                    using (var reader = cmd.ExecuteReader())
+                    {                      
+                        while (reader.Read())
+                        {
+                           
+                            var FileName = reader.GetString(0);
+                            var PathName = reader.GetString(1);
+                            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, FileName);
+                            using (var sqlStream = new SqlFileStream(PathName, txToken, FileAccess.Read))
+                            using (var fStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+                            {
+                                sqlStream.CopyTo(fStream);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
