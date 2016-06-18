@@ -1,0 +1,37 @@
+ALTER Procedure [supply].[GetDriverList]
+(
+	@Search nvarchar(200) = '1',
+	@PageId smallint = 2,
+	@NumberOfRows smallint = 10
+)
+As
+Begin
+
+	Select
+		b.Id, a.StaffId, a.FullName, a.NationalityId, c.Description as Nationality, a.NationalityCategoryId, d.Description as NationalityCategory
+		, a.DateOfBirth, a.JoiningDate, b.DrivingLicenseValidity, DATEDIFF(yy, getdate(), a.DateOfBirth) * -1 as Age 
+		, COUNT(1) over() as TotalRows
+	From
+		Employee a
+	Inner Join
+		supply.Driver b
+	On
+		a.Id = b.EmployeeId
+	Inner Join
+		supply.Nationality c
+	On
+		a.NationalityId = c.Id
+	Inner Join
+		supply.NationalityCategory d
+	On
+		a.NationalityCategoryId = d.Id
+	Where
+		a.FullName like '%'+ @Search +'%' or a.StaffId like '%'+ @Search +'%'
+		--Freetext(a.FullName, @Search) or Contains(a.StaffId, @Search)
+	Order By
+		b.ModifiedOn
+	Offset
+		@PageId * @NumberOfRows rows
+	Fetch next 
+		@NumberOfRows Rows only
+End
